@@ -23,7 +23,7 @@ This repository provides functions to retrieve, process, and save statistics abo
 
 ## Functions Overview
 
-### 1. `get_slugs_with_tag(tag_val)`
+### 1. get_slugs_with_tag(tag_val)
 Fetches all track slugs that have the specified tag.
 
 #### Usage:
