@@ -1,3 +1,4 @@
-outputs/
+outputs/*
+!outputs/.gitkeep
 .idea/
 __pycache__/
