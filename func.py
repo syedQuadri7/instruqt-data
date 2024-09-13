@@ -8,25 +8,35 @@ import utilities
 
 
 def get_request(q):
-    """
-    Sends a POST request to the API endpoint defined in the config.
-    The request contains a query, and the response is returned as JSON.
-    """
-    return requests.post(config.ENDPOINT, headers={"Authorization": "Bearer " + config.ACCESS_TOKEN},
-                         json={"query": q}).json()
+    # Sends a POST request to the API endpoint with the provided query 'q'
+
+    # The endpoint URL and access token are retrieved from the config object
+    # Authorization header is set using the Bearer token
+    response = requests.post(
+        config.ENDPOINT,  # API endpoint from config
+        headers={"Authorization": "Bearer " + config.ACCESS_TOKEN},  # Authorization header with Bearer token
+        json={"query": q}  # The query is passed in the request body as JSON
+    )
+
+    # The response is returned in JSON format
+    return response.json()
 
 
 def get_track_plays_by_month(track_slugs):
-    """
-    Queries the API for the track plays by month for each track slug.
-    Returns a table of results with track titles and their corresponding plays per month.
-    """
+    # Generate a dictionary of start and end dates for each month based on the config.YEAR
     dates = utilities.month_map(config.YEAR)
+
+    # Initialize an empty list to store data for each track slug
     slug_data = []
+
+    # Iterate over each track slug in the input list
     for track_slug in track_slugs:
-        print(track_slug)
+        # Initialize an empty list for the current track slug's row data
         row = []
+
+        # Iterate over each month (key = start date, value = end date) from the dates dictionary
         for k, v in dates.items():
+            # Create a query to fetch statistics for the current track slug for the specified month
             query = f"""
                 query {{
                     statistics(trackSlug: "{track_slug}", organizationSlug: "{config.ORG_SLUG}", filterDevelopers: {config.FILTER_DEVELOPERS}, start: "{k}", end: "{v}") {{
@@ -38,104 +48,85 @@ def get_track_plays_by_month(track_slugs):
                 }}
             """
 
+            # Send the query using the get_request function and store the response
             track = get_request(query)
 
+            # Extract the track title and the number of started_total plays from the response
             title = track["data"]["statistics"]["track"]["title"]
             started_total = track["data"]["statistics"]["track"]["started_total"]
+
+            # If the track title is not already in the row, append it (to avoid duplication)
             if title not in row:
                 row.append(title)
+
+            # Append the started_total plays for the current month to the row
             row.append(started_total)
 
+        # After processing all months, append the row data for this track slug to the slug_data list
         slug_data.append(row)
+
+    # Create and return a table (or similar structure) using the collected slug_data
     return create_table(slug_data)
 
 
 def get_track_slugs():
-    """
-        Queries the API for all track slugs associated with the organization.
-        Returns a list of track slugs.
-
-        Usage:
-        1. Ensure that the 'config.py' file contains the correct organization slug (ORG_SLUG).
-        2. This function makes a request to the API and retrieves all available track slugs for the organization.
-        3. The function returns a list of slugs, which can be used for other queries like fetching track statistics.
-
-        Example:
-            track_slugs = get_track_slugs()
-
-        Output:
-        A list of strings where each string is a track slug, for example:
-        ['track1', 'track2', 'track3']
-
-        Dependencies:
-        - Requires a properly configured 'config.py' file with `ORG_SLUG`.
-        - Requires the `get_request` function to handle API communication.
-
-        Note:
-        - Ensure you have network access and a valid access token to query the API.
-        """
+    # Build the GraphQL query to retrieve the slugs of all tracks for the specified organization
     query = f"""query {{
            tracks(organizationSlug: "{config.ORG_SLUG}") {{
              slug
+             title
            }}
        }}"""
 
+    # Send the query to the API and store the response
     output = get_request(query)
+
+    # Extract the 'slug' field from each track in the response
     slugs = [track['slug'] for track in output['data']['tracks']]
+
+    # Extract the 'title' field from each track in the response
+    titles = [track['title'] for track in output['data']['tracks']]
+
+    # Define the path to save the track titles in a text file
+    path = f"outputs/all_tracks_output.txt"
+
+    # Write the list of titles to a file using the helper function 'write_list_to_file'
+    write_list_to_file(titles, path)
+
+    # Return the list of slugs
     return slugs
 
 
 def create_table(data):
-    """
-    Creates a table (DataFrame) from the provided data and exports it to a file.
-    """
-    # Define the months as the column headers
+    # Define the months as the column headers for the table (from Feb to Jan)
     months = ['Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan']
 
-    # Extract the topics and values from the data
+    # Extract the topics (track titles) from the first element of each sublist in data
     topics = [item[0] for item in data]
+
+    # Extract the values (started_total plays per month) from the rest of each sublist in data
     values = [item[1:] for item in data]
 
-    # Create the DataFrame with topics as the index and months as the columns
+    # Create a pandas DataFrame with the values, using the topics as the index (row labels) and months as the columns
     df = pd.DataFrame(values, index=topics, columns=months)
 
-    file_path = f'tracks_by_month.csv'
+    # Define the file path where the CSV file will be saved
+    file_path = f'outputs/tracks_by_month.csv'
+
+    # Save the DataFrame to a CSV file
     df.to_csv(file_path)
 
+    # Print confirmation that the data has been saved
     print(f"Data has been saved to {file_path}")
 
 
 def get_tracks_scores(track_slugs):
-    """
-    Queries the API for each track's statistics such as title, total started, total completed,
-    and average review score. It computes the percentage of completions and saves the data
-    to a CSV file.
-
-    Usage:
-    1. Provide a list of track slugs as input. For example:
-        track_slugs = ['track1', 'track2', 'track3']
-    2. Ensure that the 'config.py' file contains proper configurations, such as ORG_SLUG.
-    3. The function will create an output file 'track_scores.csv' in the 'outputs' directory,
-       containing the statistics for each track.
-
-    Example:
-        track_slugs = ['slug1', 'slug2']
-        get_tracks_scores(track_slugs)
-
-    Output:
-    A CSV file named 'track_scores.csv' with the following columns:
-    - Title: The title of the track.
-    - Started: The total number of users who started the track.
-    - Completed: The total number of users who completed the track.
-    - Percent Completed: The percentage of users who completed the track.
-    - Average Review Score: The average review score for the track.
-    """
     # Initialize an empty list to hold the data for each track
     d = []
 
-    # Iterate over each track slug and make a query for each
+    # Iterate over each track slug in the provided list
     for track_slug in track_slugs:
-        # Define the query for the specific track_slug
+        # Define the GraphQL query for the current track slug to fetch statistics
         query = f"""
             query {{
                 statistics(trackSlug: "{track_slug}", organizationSlug: "{config.ORG_SLUG}") {{
@@ -149,24 +140,25 @@ def get_tracks_scores(track_slugs):
             }}
         """
 
-        # Get data for this specific track
+        # Send the query to the API and retrieve the response data
         data = get_request(query)
 
-        # Extract relevant statistics from the response
+        # Extract the relevant track statistics from the response
         track_data = data['data']['statistics']['track']
         title = track_data['title']
         started = track_data['started_total']
         completed = track_data['completed_total']
         average_review_score = track_data['average_review_score']
 
-        # Calculate percent completed and round to 2 decimal places
+        # Calculate the percentage of completed courses, rounded to 2 decimal places
+        # If no courses were started, set percent_completed to 0.00
         percent_completed = round((completed / started * 100), 2) if started > 0 else 0.00
 
-        # Round average_review_score to 2 decimal places, but only if it's not None
+        # Round the average review score to 2 decimal places, if it exists (not None)
         if average_review_score is not None:
             average_review_score = round(average_review_score, 2)
 
-        # Append the row to the data list
+        # Append a dictionary containing the track data to the list 'd'
         d.append({
             'Title': title,
             'Started': started,
@@ -175,20 +167,18 @@ def get_tracks_scores(track_slugs):
             'Average Review Score': average_review_score
         })
 
-    # Create a DataFrame from the data list
+    # Convert the list of dictionaries into a pandas DataFrame
     df = pd.DataFrame(d)
 
-    # Write the DataFrame to a CSV file
-    file_path = f'track_scores.csv'
+    # Define the file path where the DataFrame will be saved as a CSV
+    file_path = f'outputs/track_scores.csv'
+
+    # Write the DataFrame to a CSV file without including the index column
     df.to_csv(file_path, index=False)
 
 
 def get_slugs_with_tag(tag_val):
-    """
-    Queries the API for tracks based on a specific tag value.
-    Writes the track titles associated with that tag to a text file.
-    Returns the track slugs that match the tag.
-    """
+    # Build the GraphQL query to retrieve track slugs, titles, and their associated tags
     query = f"""query {{
                tracks(organizationSlug: "{config.ORG_SLUG}") {{
                 slug
@@ -199,36 +189,47 @@ def get_slugs_with_tag(tag_val):
                }}
            }}"""
 
-    data = (get_request(query))
+    # Send the query to the API and store the response data
+    data = get_request(query)
+    print(data)
 
+    # Initialize empty lists to store the slugs and titles of tracks that match the tag
     tagged_slugs = []
     tagged_titles = []
-    for track in data.get('data', {}).get('tracks', []):
-        for tag in track.get('trackTags', []):
-            if tag.get('value') == tag_val:
-                tagged_slugs.append(track.get('slug'))
-                tagged_titles.append(track.get('title'))
-                break
 
-    write_list_to_file(tagged_titles, tag_val)
+    # Iterate over each track in the response
+    for track in data.get('data', {}).get('tracks', []):
+        # Check each tag associated with the track
+        for tag in track.get('trackTags', []):
+            # If the tag value matches the provided tag_val, add the slug and title to the respective lists
+            if tag.get('value') == tag_val:
+                tagged_slugs.append(track.get('slug'))  # Add the slug of the track
+                tagged_titles.append(track.get('title'))  # Add the title of the track
+                break  # Stop checking other tags for this track once a match is found
+
+    # Define the path for saving the tagged track titles to a file
+    path = f"outputs/{tag_val}_tag_output.txt"
+
+    # Write the list of tagged titles to a text file
+    write_list_to_file(tagged_titles, path)
+
+    # Return the list of slugs for tracks that have the matching tag
     return tagged_slugs
 
 
-def write_list_to_file(lines, name):
-    """
-    Writes the provided list of lines to a file under the 'outputs' directory.
-    """
-    name = f"outputs/{name}_tag_output.txt"
-    with open(name, 'w') as f:
+def write_list_to_file(lines, p):
+    # Open the file at the specified path 'p' in write mode
+    with open(p, 'w') as f:
+        # Iterate over each item in the list 'lines'
         for line in lines:
+            # Write each item followed by a newline character
             f.write(f"{line}\n")
+
+    # Print a confirmation message indicating where the output has been stored
+    print(f"Output stored in {p}")
 
 
 def is_token_valid():
-    """
-    Checks if the stored token in the credentials file is still valid.
-    Returns True if valid, False otherwise.
-    """
     try:
         # Read the credentials file
         with open(config.credentials_file, 'r') as f:
@@ -256,9 +257,6 @@ def is_token_valid():
 
 
 def renew_token():
-    """
-    Renews the API token by running the 'instruqt auth login' command.
-    """
     try:
         # Run the instruqt auth login command to renew the token
         subprocess.run("instruqt auth login", shell=True, check=True)
@@ -268,11 +266,13 @@ def renew_token():
 
 
 def check_and_renew_token():
-    """
-    Checks if the token is valid; if not, renews the token.
-    """
+    # Check if the current token is valid using the is_token_valid function
     if is_token_valid():
+        # If the token is still valid, print a confirmation message
         print("Token is still valid.")
     else:
+        # If the token has expired or is invalid, print a message and renew the token
         print("Token has expired or is invalid. Renewing token...")
+        # Call the renew_token function to refresh the token
         renew_token()
+

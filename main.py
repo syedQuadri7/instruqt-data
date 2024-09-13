@@ -11,12 +11,12 @@ def main():
     func.check_and_renew_token()
 
     tracks_tagged = func.get_slugs_with_tag("terraform")
-    #
-    # tracks_all = func.get_track_slugs()
-    #
-    # func.get_track_plays_by_month(tracks_tagged)
 
-    # func.get_tracks_scores("scores")
+    tracks_all = func.get_track_slugs()
+
+    func.get_track_plays_by_month(tracks_tagged)
+
+    func.get_tracks_scores(tracks_all)
 
     hvd_tracks = ["health-assessments-and-run-tasks",
                   "terraform-modules-testing-and-lifecycle",
@@ -50,11 +50,6 @@ def main():
                   "consul-enterprise-business-continuity-and-upgrade",
                   "enterprise-cluster-configuration",
                   "enterprise-cluster-dns-configuration"]
-
-    track_slugs = ["health-assessments-and-run-tasks",
-                  "terraform-modules-testing-and-lifecycle"]
-
-    func.get_tracks_scores(func.get_track_slugs())
 
 
     print("Everything is done")
