@@ -136,52 +136,67 @@ Side effect: Saves completion statistics to `outputs/invite_stats.csv`.
 
 ## Example Workflow
 
-The functions below have customizable parameter values. Use the [Functions Overview](#functions-overview-) section as a
-reference for what parameters are acceptable.
+### Step-by-Step Instructions
 
-When you run the script, the code inside `main()` will execute. All the functions must be run from the main function.
+1. **Setting Up the Script**: The script is structured around a main() function. When you run the script, all the code
+   inside this main() function will be executed. So, every function call (e.g., fetching data, statistics, etc.) should
+   be placed within main().
 
-> [!IMPORTANT]
-> The `func.check_and_renew_token()` function must be the first line in the `main()` function since this will verify
-> your
-> authentication with instruqt.
+2. **Authenticating**: The most important thing to do before any other operation is to authenticate with the
+   platform (instruqt in this case). You do this by calling func.check_and_renew_token() at the very beginning of
+   the main() function.
 
-### Get slugs for tracks tagged with "terraform":
+   #### Example
 
-```
-tracks_tagged = func.get_slugs_with_tag("terraform")
-```
+    ```python
+    def main():
+        func.check_and_renew_token()  # Authenticates the user before running other tasks
+        # Your code continues here...
+    ```
 
-### Get slugs for all tracks:
+3. **Fetching Track Information**: Once authenticated, you can retrieve different types of information related
+   to tracks. Below are examples of functions that get track data:
 
-```
-tracks_all = func.get_track_slugs()
-```
+    - Tracks tagged with "terraform": This function retrieves the slugs (unique identifiers) of tracks that are
+      tagged with "terraform."
 
-### Get monthly play statistics for tracks:
+        ```
+        tracks_tagged = func.get_slugs_with_tag("terraform")
+        ```
 
-```
-func.get_track_plays_by_month(tracks)
-```
+    - All tracks: This function returns slugs for all available tracks.
 
-### Get completion and review scores for all tracks:
+        ```
+        tracks_all = func.get_track_slugs()
+        ```
 
-```
-func.get_tracks_scores(tracks_all)
-```
+4. **Retrieving Statistics**: After fetching the track slugs, you can get various types of statistical data.
 
-### Get statistics for a specific invite by its ID:
+    - Monthly play statistics for tracks: If you want to know how often a track has been played over different
+      months, you can pass the track slugs into the following function:
+       ```
+       func.get_track_plays_by_month(tracks)
+       ```
 
-```
-invite_id = "inviteID123"
-func.get_unique_invite_stats(invite_id)
-```
+    - Completion and review scores for all tracks: This function gives you both completion rates and review scores
+      for the tracks.
+       ```
+       func.get_tracks_scores(tracks_all)
+       ```
 
-You can get the invite_id by navigating to [Instruqt invites](https://play.instruqt.com/manage/hashicorp/invites,
-selecting an invite, and then copying the value of the `Identifier` field.
+5. **Getting Invite Statistics**: For statistics related to specific invites or all invites:
 
-### Get statistics for all invites associated with the team:
+   - Specific Invite: You need an invite_id, which can be obtained from the Instruqt platform. You can get the invite_id by
+     navigating to [Instruqt invites](https://play.instruqt.com/manage/hashicorp/invites, selecting an invite, and then
+     copying the value of the `Identifier` field.
 
-```
-func.get_invite_stats()
-```
+       ```
+       invite_id = "inviteID123"
+       func.get_unique_invite_stats(invite_id)
+       ```
+     
+   - **All invites for the team**: You can get statistics for all invites related to your team with this command:
+
+      ```
+      func.get_invite_stats()
+      ```
