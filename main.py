@@ -1,6 +1,5 @@
 import func
 
-
 # Usage Instructions:
 # This script is designed to interact with an API, retrieve data for various tracks, and process the data.
 # Ensure the following:
@@ -11,19 +10,19 @@ import func
 def main():
     func.check_and_renew_token()
 
-    tracks_tagged = func.get_slugs_with_tag("terraform")
+    tracks_tagged = func.get_slugs_with_tag("vault")
 
-    tracks_all = func.get_track_slugs()
-
-    func.get_track_plays_by_month(tracks_tagged)
-
-    func.get_tracks_scores(tracks_all)
-
-    func.get_invite_stats()
-
-    i = "xjsnltkjyjrg"
-
-    func.get_unique_invite_stats(i)
+    # tracks_all = func.get_track_slugs()
+    #
+    # func.get_track_plays_by_month(tracks_tagged)
+    #
+    # func.get_tracks_scores(tracks_all)
+    #
+    # func.get_invite_stats()
+    #
+    # i = "xjsnltkjyjrg"
+    #
+    # func.get_unique_invite_stats(i)
 
     print("Everything is done")
 

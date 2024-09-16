@@ -390,6 +390,12 @@ def renew_token():
     try:
         # Run the instruqt auth login command to renew the token
         subprocess.run("instruqt auth login", shell=True, check=True)
+
+        # Retrieve the updated token from the credentials file using jq
+        config.ACCESS_TOKEN = subprocess.check_output(
+            "jq -r .access_token ~/.config/instruqt/credentials", shell=True, text=True
+        ).strip()
+
         print("Token renewed successfully.")
     except subprocess.CalledProcessError as e:
         print(f"Failed to renew token: {e}")
@@ -405,4 +411,3 @@ def check_and_renew_token():
         print("Token has expired or is invalid. Renewing token...")
         # Call the renew_token function to refresh the token
         renew_token()
-        is_token_valid()
