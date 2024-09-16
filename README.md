@@ -73,8 +73,31 @@ Output: None.
 
 Side effect: Saves completion and review scores to `outputs/track_scores.csv`.
 
-## Example Workflow
+### 5. get_unique_invite_stats(i)
+Retrieves aggregated completion statistics for a specific invite ID.
+```python
+func.get_unique_invite_stats("inviteID123")
+```
 
+Input: i (string) - A unique invite ID.
+
+Output: None.
+
+Side effect: Saves completion statistics to outputs/{inviteID}_invite_stats.csv.
+
+### 6. get_invite_stats()
+Retrieves completion statistics for all invites associated with the organization.
+```python
+func.get_invite_stats()
+```
+
+Input: None.
+
+Output: None.
+
+Side effect: Saves completion statistics to outputs/invite_stats.csv.
+
+## Example Workflow
 
 ### Get slugs for tracks tagged with "terraform":
 ```python
@@ -95,4 +118,15 @@ func.get_track_plays_by_month(tracks_tagged)
 
 ```python
 func.get_tracks_scores(tracks_all)
+```
+
+### Get statistics for a specific invite by its ID:
+```python
+invite_id = "inviteID123"
+func.get_unique_invite_stats(invite_id)
+```
+
+### Get statistics for all invites associated with the team:
+```python
+func.get_invite_stats()
 ```
