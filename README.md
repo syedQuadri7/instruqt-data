@@ -109,9 +109,9 @@ tracks_tagged = func.get_slugs_with_tag("terraform")
 tracks_all = func.get_track_slugs()
 ```
 
-### Get monthly play statistics for tagged tracks:
+### Get monthly play statistics for tracks:
 ```python
-func.get_track_plays_by_month(tracks_tagged)
+func.get_track_plays_by_month(tracks)
 ```
 
 ### Get completion and review scores for all tracks:
