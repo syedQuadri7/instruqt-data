@@ -1,4 +1,8 @@
+import json
+
 import func
+import config
+
 
 # Usage Instructions:
 # This script is designed to interact with an API, retrieve data for various tracks, and process the data.
@@ -10,13 +14,17 @@ import func
 def main():
     func.check_and_renew_token()
 
-    tracks_tagged = func.get_slugs_with_tag("terraform")
+    # tracks_tagged = func.get_slugs_with_tag("terraform")
+    #
+    # tracks_all = func.get_track_slugs()
+    #
+    # func.get_track_plays_by_month(tracks_tagged)
+    #
+    # func.get_tracks_scores(tracks_all)
+    # func.get_invite_stats()
 
-    tracks_all = func.get_track_slugs()
-
-    func.get_track_plays_by_month(tracks_tagged)
-
-    func.get_tracks_scores(tracks_all)
+    i = "xjsnltkjyjrg"
+    func.get_unique_invite_stats(i)
 
     hvd_tracks = ["health-assessments-and-run-tasks",
                   "terraform-modules-testing-and-lifecycle",
@@ -51,8 +59,8 @@ def main():
                   "enterprise-cluster-configuration",
                   "enterprise-cluster-dns-configuration"]
 
-
     print("Everything is done")
+
 
 if __name__ == "__main__":
     main()

@@ -5,6 +5,7 @@ import pandas as pd
 import requests
 import config
 import utilities
+from datetime import datetime
 
 
 def get_request(q):
@@ -111,7 +112,7 @@ def create_table(data):
     df = pd.DataFrame(values, index=topics, columns=months)
 
     # Define the file path where the CSV file will be saved
-    file_path = f'outputs/tracks_by_month.csv'
+    file_path = 'outputs/tracks_by_month.csv'
 
     # Save the DataFrame to a CSV file
     df.to_csv(file_path)
@@ -171,7 +172,7 @@ def get_tracks_scores(track_slugs):
     df = pd.DataFrame(d)
 
     # Define the file path where the DataFrame will be saved as a CSV
-    file_path = f'outputs/track_scores.csv'
+    file_path = 'outputs/track_scores.csv'
 
     # Write the DataFrame to a CSV file without including the index column
     df.to_csv(file_path, index=False)
@@ -229,6 +230,135 @@ def write_list_to_file(lines, p):
     print(f"Output stored in {p}")
 
 
+def get_unique_invite_stats(i):
+    query = f"""
+                query {{
+                trackInvite(inviteID: "{i}") {{
+                    publicTitle
+                    claimCount
+                    plays {{
+                        total_challenges
+                        completed_challenges
+                        }}
+                    }}
+                }}
+            """
+
+    data = get_request(query)
+
+    # Extract the invite data directly since trackInvite is not a list
+    invite = data['data']['trackInvite']
+    public_title = invite['publicTitle']
+    claim_count = invite['claimCount']
+
+    # List to store rows of extracted data
+    rows = []
+
+    # Count the number of plays
+    number_of_plays = len(invite['plays'])
+
+    # Aggregate challenges if there are plays
+    if number_of_plays > 0:
+        total_challenges_sum = 0
+        completed_challenges_sum = 0
+
+        for play in invite['plays']:
+            total_challenges_sum += play['total_challenges']
+            completed_challenges_sum += play['completed_challenges']
+
+        # Calculate the aggregated completion percentage
+        completion_percent = round((completed_challenges_sum / total_challenges_sum) * 100,
+                                   2) if total_challenges_sum > 0 else 0
+
+        # Append aggregated data
+        rows.append([public_title, claim_count, number_of_plays, total_challenges_sum, completed_challenges_sum,
+                     completion_percent])
+    else:
+        # No plays, just add title and claimCount
+        rows.append([public_title, claim_count, number_of_plays, None, None, None])
+
+    # Convert the rows to a pandas DataFrame
+    df = pd.DataFrame(rows,
+                      columns=['PublicTitle', 'ClaimCount', 'NumberOfPlays', 'TotalChallenges', 'CompletedChallenges',
+                               'CompletionPercent'])
+
+    # Define the file path where the DataFrame will be saved as a CSV
+    file_path = f'outputs/{i}_invite_stats.csv'
+
+    # Write the DataFrame to a CSV file without including the index column
+    df.to_csv(file_path, index=False)
+
+
+def get_invite_stats():
+    query = f"""
+            query {{
+            trackInvites(teamSlug: "{config.ORG_SLUG}") {{
+                publicTitle
+                claimCount
+                expiresAt
+                plays {{
+                    total_challenges
+                    completed_challenges
+                    }}
+                }}
+            }}
+        """
+
+    data = get_request(query)
+
+    # Get current date and time
+    current_time = datetime.utcnow()
+
+    # List to store rows of extracted data
+    rows = []
+
+    # Iterate over the trackInvites in the JSON data
+    for invite in data['data']['trackInvites']:
+        public_title = invite['publicTitle']
+        claim_count = invite['claimCount']
+        expires_at = invite.get('expiresAt')
+
+        # Check if the invite has expired
+        if expires_at:
+            expires_at_dt = datetime.strptime(expires_at, "%Y-%m-%dT%H:%M:%SZ")
+            if expires_at_dt < current_time:
+                continue
+
+        # Count the number of plays
+        number_of_plays = len(invite['plays'])
+
+        # Aggregate challenges if there are plays
+        if invite['plays']:
+            total_challenges_sum = 0
+            completed_challenges_sum = 0
+
+            for play in invite['plays']:
+                total_challenges_sum += play['total_challenges']
+                completed_challenges_sum += play['completed_challenges']
+
+            # Calculate the aggregated completion percentage
+            completion_percent = round((completed_challenges_sum / total_challenges_sum) * 100,
+                                       2) if total_challenges_sum > 0 else 0
+
+            # Append aggregated data
+            rows.append([public_title, claim_count, number_of_plays, total_challenges_sum, completed_challenges_sum,
+                         completion_percent])
+        else:
+            # No plays, just add title and claimCount
+            rows.append([public_title, claim_count, number_of_plays, None, None, None])
+
+    # Convert the rows to a pandas DataFrame
+    df = pd.DataFrame(rows,
+                      columns=['PublicTitle', 'ClaimCount', 'NumberOfPlays', 'TotalChallenges', 'CompletedChallenges',
+                               'CompletionPercent'])
+
+    # Define the file path where the DataFrame will be saved as a CSV
+    file_path = 'outputs/invite_stats.csv'
+
+    # Write the DataFrame to a CSV file without including the index column
+    df.to_csv(file_path, index=False)
+
+
 def is_token_valid():
     try:
         # Read the credentials file
@@ -269,10 +399,10 @@ def check_and_renew_token():
     # Check if the current token is valid using the is_token_valid function
     if is_token_valid():
         # If the token is still valid, print a confirmation message
-        print("Token is still valid.")
+        print("Token is valid.")
     else:
         # If the token has expired or is invalid, print a message and renew the token
         print("Token has expired or is invalid. Renewing token...")
         # Call the renew_token function to refresh the token
         renew_token()
-
+        is_token_valid()
