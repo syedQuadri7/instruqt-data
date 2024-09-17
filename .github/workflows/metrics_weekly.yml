@@ -1,6 +1,10 @@
 name: Metrics Weekly
 
 on:
+  # Allow manual triggering
+  workflow_dispatch:
+
+  # Scheduled run every Monday
   schedule:
     # Runs at 00:00 UTC every Monday
     - cron: '0 0 * * 1'
