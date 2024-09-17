@@ -32,6 +32,10 @@ jobs:
       env:
         CREDS_JSON: ${{ secrets.SERVICE_ACCOUNT }}
 
+    # Install Cython before installing other dependencies
+    - name: Install Cython
+      run: pip install cython
+
     # Step 4: Install dependencies
     - name: Install dependencies
       run: |
