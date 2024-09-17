@@ -1,5 +1,6 @@
 import csv
 import json
+import os
 import subprocess
 import time
 import pandas as pd
@@ -97,6 +98,8 @@ def write_to_sheets(path, sheet):
         # Update the worksheet with the CSV data
         worksheet.update('A1', reader)
 
+        # Delete the CSV file after writing to the sheet
+        os.remove(path)
 
 def get_track_slugs():
     # Build the GraphQL query to retrieve the slugs of all tracks for the specified organization
