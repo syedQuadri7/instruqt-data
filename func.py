@@ -1,11 +1,15 @@
+import csv
 import json
 import subprocess
 import time
 import pandas as pd
 import requests
+from gspread import WorksheetNotFound
+
 import config
 import utilities
 from datetime import datetime
+import gspread
 
 
 def get_request(q):
@@ -23,7 +27,7 @@ def get_request(q):
     return response.json()
 
 
-def get_track_plays_by_month(track_slugs):
+def get_track_plays_by_month(track_slugs, sheet):
     # Generate a dictionary of start and end dates for each month based on the config.YEAR
     dates = utilities.month_map(config.YEAR)
 
@@ -67,7 +71,31 @@ def get_track_plays_by_month(track_slugs):
         slug_data.append(row)
 
     # Create and return a table (or similar structure) using the collected slug_data
-    return create_table(slug_data)
+    return create_table(slug_data, sheet)
+
+
+def write_to_sheets(path, sheet):
+
+    if sheet is not None:
+        gc = gspread.service_account()
+
+        spreadsheet = gc.open('Instruqt Metrics')
+
+        # Try to open the worksheet by title, or create it if it doesn't exist
+        try:
+            worksheet = spreadsheet.worksheet(sheet)
+        except WorksheetNotFound:
+            # If the sheet doesn't exist, create a new one
+            worksheet = spreadsheet.add_worksheet(title=sheet, rows=300, cols=100)
+        # Read the CSV file
+        with open(f'{path}', newline='') as csvfile:
+            reader = list(csv.reader(csvfile))
+
+        # Resize the worksheet to fit the CSV data
+        worksheet.resize(rows=len(reader), cols=len(reader[0]))
+
+        # Update the worksheet with the CSV data
+        worksheet.update('A1', reader)
 
 
 def get_track_slugs():
@@ -85,20 +113,11 @@ def get_track_slugs():
     # Extract the 'slug' field from each track in the response
     slugs = [track['slug'] for track in output['data']['tracks']]
 
-    # Extract the 'title' field from each track in the response
-    titles = [track['title'] for track in output['data']['tracks']]
-
-    # Define the path to save the track titles in a text file
-    path = f"outputs/all_tracks_output.txt"
-
-    # Write the list of titles to a file using the helper function 'write_list_to_file'
-    write_list_to_file(titles, path)
-
     # Return the list of slugs
     return slugs
 
 
-def create_table(data):
+def create_table(data, sheet):
     # Define the months as the column headers for the table (from Feb to Jan)
     months = ['Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan']
 
@@ -112,70 +131,118 @@ def create_table(data):
     df = pd.DataFrame(values, index=topics, columns=months)
 
     # Define the file path where the CSV file will be saved
-    file_path = 'outputs/tracks_by_month.csv'
+    file_path = 'outputs/data.csv'
 
     # Save the DataFrame to a CSV file
     df.to_csv(file_path)
 
-    # Print confirmation that the data has been saved
-    print(f"Data has been saved to {file_path}")
+    return write_to_sheets(file_path, sheet)
 
 
-def get_tracks_scores(track_slugs):
-    # Initialize an empty list to hold the data for each track
-    d = []
+def get_tracks_completion_by_month(track_slugs, sheet):
+    # Generate a dictionary of start and end dates for each month based on the config.YEAR
+    dates = utilities.month_map(config.YEAR)
 
-    # Iterate over each track slug in the provided list
+    # Initialize an empty list to store data for each track slug
+    slug_data = []
+
+    # Iterate over each track slug in the input list
     for track_slug in track_slugs:
-        # Define the GraphQL query for the current track slug to fetch statistics
-        query = f"""
-            query {{
-                statistics(trackSlug: "{track_slug}", organizationSlug: "{config.ORG_SLUG}") {{
-                    track {{
-                        title
-                        started_total
-                        completed_total
-                        average_review_score
+        # Initialize an empty list for the current track slug's row data
+        row = []
+
+        # Iterate over each month (key = start date, value = end date) from the dates dictionary
+        for k, v in dates.items():
+            # Create a query to fetch statistics for the current track slug for the specified month
+            query = f"""
+                query {{
+                    statistics(trackSlug: "{track_slug}", organizationSlug: "{config.ORG_SLUG}", filterDevelopers: {config.FILTER_DEVELOPERS}, start: "{k}", end: "{v}") {{
+                        track {{
+                            title
+                            started_total
+                            completed_total
+                        }}
                     }}
                 }}
-            }}
-        """
+            """
 
-        # Send the query to the API and retrieve the response data
-        data = get_request(query)
+            # Send the query using the get_request function and store the response
+            track = get_request(query)
 
-        # Extract the relevant track statistics from the response
-        track_data = data['data']['statistics']['track']
-        title = track_data['title']
-        started = track_data['started_total']
-        completed = track_data['completed_total']
-        average_review_score = track_data['average_review_score']
+            # Extract the track title, started_total, and completed_total from the response
+            title = track["data"]["statistics"]["track"]["title"]
+            started_total = track["data"]["statistics"]["track"]["started_total"]
+            completed_total = track["data"]["statistics"]["track"]["completed_total"]
 
-        # Calculate the percentage of completed courses, rounded to 2 decimal places
-        # If no courses were started, set percent_completed to 0.00
-        percent_completed = round((completed / started * 100), 2) if started > 0 else 0.00
+            # Calculate the percentage of completed courses, rounded to 2 decimal places
+            # If no courses were started, set percent_completed to 0.00
+            percent_completed = round((completed_total / started_total * 100), 2) if started_total > 0 else 0.00
 
-        # Round the average review score to 2 decimal places, if it exists (not None)
-        if average_review_score is not None:
-            average_review_score = round(average_review_score, 2)
+            # If the track title is not already in the row, append it (to avoid duplication)
+            if title not in row:
+                row.append(title)
 
-        # Append a dictionary containing the track data to the list 'd'
-        d.append({
-            'Title': title,
-            'Started': started,
-            'Completed': completed,
-            'Percent Completed': percent_completed,
-            'Average Review Score': average_review_score
-        })
+            # Append the completion percentage for the current month to the row
+            row.append(percent_completed)
 
-    # Convert the list of dictionaries into a pandas DataFrame
-    df = pd.DataFrame(d)
+        # After processing all months, append the row data for this track slug to the slug_data list
+        slug_data.append(row)
 
-    # Define the file path where the DataFrame will be saved as a CSV
-    file_path = 'outputs/track_scores.csv'
+    # Create and return a table (or similar structure) using the collected slug_data
+    return create_table(slug_data, sheet)
 
-    # Write the DataFrame to a CSV file without including the index column
-    df.to_csv(file_path, index=False)
+
+def get_tracks_review_score_by_month(track_slugs, sheet):
+    # Generate a dictionary of start and end dates for each month based on the config.YEAR
+    dates = utilities.month_map(config.YEAR)
+
+    # Initialize an empty list to store data for each track slug
+    slug_data = []
+
+    # Iterate over each track slug in the input list
+    for track_slug in track_slugs:
+        # Initialize an empty list for the current track slug's row data
+        row = []
+
+        # Iterate over each month (key = start date, value = end date) from the dates dictionary
+        for k, v in dates.items():
+            # Create a query to fetch statistics for the current track slug for the specified month
+            query = f"""
+                query {{
+                    statistics(trackSlug: "{track_slug}", organizationSlug: "{config.ORG_SLUG}", filterDevelopers: {config.FILTER_DEVELOPERS}, start: "{k}", end: "{v}") {{
+                        track {{
+                            title
+                            average_review_score
+                        }}
+                    }}
+                }}
+            """
+
+            # Send the query using the get_request function and store the response
+            track = get_request(query)
+
+            # Extract the track title and average review score from the response
+            title = track["data"]["statistics"]["track"]["title"]
+            average_review_score = track["data"]["statistics"]["track"]["average_review_score"]
+
+            # Round the average review score to 2 decimal places, if it exists (not None)
+            if average_review_score is not None:
+                average_review_score = round(average_review_score, 2)
+            else:
+                average_review_score = 0.00  # Handle None case
+
+            # If the track title is not already in the row, append it (to avoid duplication)
+            if title not in row:
+                row.append(title)
+
+            # Append the average review score for the current month to the row
+            row.append(average_review_score)
+
+        # After processing all months, append the row data for this track slug to the slug_data list
+        slug_data.append(row)
+
+    # Create and return a table (or similar structure) using the collected slug_data
+    return create_table(slug_data, sheet)
 
 
 def get_slugs_with_tag(tag_val):
@@ -192,11 +259,9 @@ def get_slugs_with_tag(tag_val):
 
     # Send the query to the API and store the response data
     data = get_request(query)
-    print(data)
 
-    # Initialize empty lists to store the slugs and titles of tracks that match the tag
+    # Initialize empty lists to store the slugs of tracks that match the tag
     tagged_slugs = []
-    tagged_titles = []
 
     # Iterate over each track in the response
     for track in data.get('data', {}).get('tracks', []):
@@ -205,29 +270,10 @@ def get_slugs_with_tag(tag_val):
             # If the tag value matches the provided tag_val, add the slug and title to the respective lists
             if tag.get('value') == tag_val:
                 tagged_slugs.append(track.get('slug'))  # Add the slug of the track
-                tagged_titles.append(track.get('title'))  # Add the title of the track
                 break  # Stop checking other tags for this track once a match is found
-
-    # Define the path for saving the tagged track titles to a file
-    path = f"outputs/{tag_val}_tag_output.txt"
-
-    # Write the list of tagged titles to a text file
-    write_list_to_file(tagged_titles, path)
 
     # Return the list of slugs for tracks that have the matching tag
     return tagged_slugs
-
-
-def write_list_to_file(lines, p):
-    # Open the file at the specified path 'p' in write mode
-    with open(p, 'w') as f:
-        # Iterate over each item in the list 'lines'
-        for line in lines:
-            # Write each item followed by a newline character
-            f.write(f"{line}\n")
-
-    # Print a confirmation message indicating where the output has been stored
-    print(f"Output stored in {p}")
 
 
 def get_unique_invite_stats(i):

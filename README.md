@@ -186,17 +186,17 @@ Side effect: Saves completion statistics to `outputs/invite_stats.csv`.
 
 5. **Getting Invite Statistics**: For statistics related to specific invites or all invites:
 
-   - Specific Invite: You need an invite_id, which can be obtained from the Instruqt platform. You can get the invite_id by
-     navigating to [Instruqt invites](https://play.instruqt.com/manage/hashicorp/invites, selecting an invite, and then
-     copying the value of the `Identifier` field.
+    - Specific Invite: You need an invite_id, which can be obtained from the Instruqt platform. You can get the
+      invite_id by navigating to [Instruqt invites](https://play.instruqt.com/manage/hashicorp/invites, selecting an
+      invite, and then copying the value of the `Identifier` field.
+
+        ```
+        invite_id = "inviteID123"
+        func.get_unique_invite_stats(invite_id)
+        ```
+
+    - **All invites for the team**: You can get statistics for all invites related to your team with this command:
 
        ```
-       invite_id = "inviteID123"
-       func.get_unique_invite_stats(invite_id)
+       func.get_invite_stats()
        ```
-     
-   - **All invites for the team**: You can get statistics for all invites related to your team with this command:
-
-      ```
-      func.get_invite_stats()
-      ```

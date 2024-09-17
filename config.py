@@ -1,8 +1,6 @@
 import os
 import subprocess
 
-import subprocess
-
 # Suppress the output by redirecting it to DEVNULL
 ACCESS_TOKEN = subprocess.check_output(
     "jq -r .access_token ~/.config/instruqt/credentials",
@@ -22,3 +20,4 @@ ORG_SLUG = "hashicorp"
 FILTER_DEVELOPERS = "true"
 YEAR = "2024"
 credentials_file = os.path.expanduser('~/.config/instruqt/credentials')
+SPREADSHEET = "1MRjoESUT0O6OGao9qO52DmfBPCwHfAc5oMl3YMK-4VE"
