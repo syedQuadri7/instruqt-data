@@ -1,0 +1,38 @@
+name: Metrics Weekly
+
+on:
+  schedule:
+    # Runs at 00:00 UTC every Monday
+    - cron: '0 0 * * 1'
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Checkout the repository
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # Step 2: Set up Python environment
+    - name: Set up Python 3.x
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    # Step 3: Create service_account.json from the secret
+    - name: Create service_account.json
+      run: |
+        mkdir -p ~/.config/gspread
+        echo "SERVICE_ACCOUNT" > ~/.config/gspread/service_account.json
+      env:
+        CREDS_JSON: ${{ secrets.SERVICE_ACCOUNT }}
+
+    # Step 4: Install dependencies
+    - name: Install dependencies
+      run: |
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    # Step 5: Run the Python script
+    - name: Run Python script
+      run: python main.py
