@@ -40,7 +40,7 @@ jobs:
 
     # Install Cython before installing other dependencies
     - name: Install Cython
-      run: pip install cython
+      run: pip3 install Cython -vv
 
     # Step 4: Install dependencies
     - name: Install dependencies
