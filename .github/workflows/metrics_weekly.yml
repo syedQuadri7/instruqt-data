@@ -40,3 +40,5 @@ jobs:
     # Step 5: Run the Python script
     - name: Run Python script
       run: python main.py
+      env:
+        INSTRUQT_CREDS: ${{ secrets.INSTRUQT_CREDS }}

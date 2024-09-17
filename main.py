@@ -2,7 +2,7 @@ import func
 
 
 def main():
-    func.check_and_renew_token()
+    # func.check_and_renew_token()
 
     tagged_vault = func.get_slugs_with_tag("vault")
     tagged_terraform = func.get_slugs_with_tag("terraform")
