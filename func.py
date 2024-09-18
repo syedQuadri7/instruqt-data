@@ -112,7 +112,7 @@ def get_track_slugs():
 
     # Send the query to the API and store the response
     output = get_request(query)
-    print(output)
+
     # Extract the 'slug' field from each track in the response
     slugs = [track['slug'] for track in output['data']['tracks']]
 

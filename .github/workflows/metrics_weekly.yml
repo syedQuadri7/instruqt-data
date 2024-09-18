@@ -29,6 +29,7 @@ jobs:
       run: |
         mkdir -p ~/.config/gspread
         echo "$SERVICE_ACCOUNT" > service_account.json
+        cat service_account.json
       env:
         CREDS_JSON: ${{ secrets.SERVICE_ACCOUNT }}
 
