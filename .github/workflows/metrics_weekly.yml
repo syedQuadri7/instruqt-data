@@ -32,16 +32,6 @@ jobs:
       env:
         CREDS_JSON: ${{ secrets.SERVICE_ACCOUNT }}
 
-    # Install necessary system dependencies
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y openjdk-11-jdk libffi-dev build-essential python3-dev
-
-    # Install Cython before installing other dependencies
-    - name: Install Cython
-      run: pip3 install Cython -vv
-
     # Step 4: Install dependencies
     - name: Install dependencies
       run: |
