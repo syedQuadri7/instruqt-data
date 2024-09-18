@@ -26,12 +26,7 @@ jobs:
 
     # Step 3: Create service_account.json from the secret
     - name: Create service_account.json
-      run: |
-        mkdir -p ~/.config/gspread
-        echo "$SERVICE_ACCOUNT" > service_account.json
-        cat service_account.json
-      env:
-        CREDS_JSON: ${{ secrets.SERVICE_ACCOUNT }}
+      run: echo "${{ secrets.SERVICE_ACCOUNT }}" > service_account.json
 
     # Step 4: Install dependencies
     - name: Install dependencies
