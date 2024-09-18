@@ -31,6 +31,9 @@ jobs:
     - name: List files to check service_account.json
       run: ls -alh
 
+    - name: Validate service_account.json
+      run: jq . service_account.json
+
 
       # Step 4: Install dependencies
     - name: Install dependencies
