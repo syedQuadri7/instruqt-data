@@ -4,10 +4,10 @@ on:
   # Allow manual triggering
   workflow_dispatch:
 
-  # Scheduled run every Monday
+  # Scheduled run every Monday at 12:00 AM CST (06:00 UTC)
   schedule:
-    # Runs at 00:00 UTC every Monday
-    - cron: '0 0 * * 1'
+    # Runs at 06:00 UTC every Monday (12:00 AM CST)
+    - cron: '0 6 * * 1'
 
 jobs:
   run-script:
@@ -18,37 +18,28 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    # Step 2: Set up Python environment
+    # Step 2: Set up Python environment with version 3.x
     - name: Set up Python 3.x
       uses: actions/setup-python@v4
       with:
         python-version: '3.x'
 
+    # Step 3: Create base64 encoded content from service_account.json
     - name: Create file
       run: cat service_account.json | base64
 
-    # Step 3: Create service_account.json from the secret
+    # Step 4: Create service_account.json file from the secret in environment variables
     - name: Putting data
       env:
         DATA: ${{ secrets.SERVICE_ACCOUNT }}
       run: echo $DATA > service_account.json
 
-    - name: List files to check service_account.json
-      run: ls -alh
-
-    - name: Validate service_account.json
-      run: cat service_account.json
-
-    - name: Validate service_account.json
-      run: jq . service_account.json
-
-
-      # Step 4: Install dependencies
+    # Step 5: Install Python dependencies from requirements.txt (if it exists)
     - name: Install dependencies
       run: |
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    # Step 5: Run the Python script
+    # Step 6: Run the Python script with credentials from a secret
     - name: Run Python script
       run: python main.py
       env:
