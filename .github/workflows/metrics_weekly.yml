@@ -24,18 +24,14 @@ jobs:
       with:
         python-version: '3.x'
 
-    - name: Debug SERVICE_ACCOUNT secret
-      run: echo "${{ secrets.SERVICE_ACCOUNT }}"
+    - name: Create file
+      run: cat service_account.json | base64
 
-    - name: Convert to JSON
-      run: |
-        echo '${{ toJson(secrets.SERVICE_ACCOUNT) }}'
-
-
-      # Step 3: Create service_account.json from the secret
-    - name: Create service_account.json
-      run: echo "${{ secrets.SERVICE_ACCOUNT }}" | jq '.' > service_account.json
-      shell: bash
+    # Step 3: Create service_account.json from the secret
+    - name: Putting data
+      env:
+        DATA: ${{ secrets.SERVICE_ACCOUNT }}
+      run: echo $DATA > service_account.json
 
     - name: List files to check service_account.json
       run: ls -alh
