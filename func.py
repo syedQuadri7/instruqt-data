@@ -78,7 +78,7 @@ def get_track_plays_by_month(track_slugs, sheet):
 def write_to_sheets(path, sheet):
 
     if sheet is not None:
-        gc = gspread.service_account(filename='service_account.json')
+        gc = gspread.service_account(filename='./service_account.json')
 
         spreadsheet = gc.open('Instruqt Metrics')
 

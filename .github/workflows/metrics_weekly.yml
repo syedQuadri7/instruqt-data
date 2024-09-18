@@ -28,7 +28,11 @@ jobs:
     - name: Create service_account.json
       run: echo "${{ secrets.SERVICE_ACCOUNT }} > | jq '.' > service_account.json"
 
-    # Step 4: Install dependencies
+    - name: List files to check service_account.json
+      run: ls -alh
+
+
+      # Step 4: Install dependencies
     - name: Install dependencies
       run: |
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
