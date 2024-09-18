@@ -29,7 +29,7 @@ jobs:
 
     - name: Convert to JSON
       run: |
-        echo '${{ toJson(secrets.YOUR_JSON_SECRET) }}'
+        echo '${{ toJson(secrets.SERVICE_ACCOUNT) }}'
 
 
       # Step 3: Create service_account.json from the secret
