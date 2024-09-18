@@ -28,7 +28,7 @@ jobs:
     - name: Create service_account.json
       run: |
         mkdir -p ~/.config/gspread
-        echo "SERVICE_ACCOUNT" > ~/.config/gspread/service_account.json
+        echo "$SERVICE_ACCOUNT" > service_account.json
       env:
         CREDS_JSON: ${{ secrets.SERVICE_ACCOUNT }}
 
