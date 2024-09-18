@@ -26,7 +26,8 @@ jobs:
 
     # Step 3: Create service_account.json from the secret
     - name: Create service_account.json
-      run: echo "${{ secrets.SERVICE_ACCOUNT }}" > service_account.json
+      run: |
+        printf "%s" "${{ secrets.SERVICE_ACCOUNT }}" > service_account.json
 
     - name: List files to check service_account.json
       run: ls -alh
