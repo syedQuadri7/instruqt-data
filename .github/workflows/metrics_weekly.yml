@@ -24,13 +24,19 @@ jobs:
       with:
         python-version: '3.x'
 
-    # Step 3: Create service_account.json from the secret
+    - name: Debug SERVICE_ACCOUNT secret
+      run: echo "${{ secrets.SERVICE_ACCOUNT }}"
+
+      # Step 3: Create service_account.json from the secret
     - name: Create service_account.json
-      run: |
-        printf "%s" "${{ secrets.SERVICE_ACCOUNT }}" > service_account.json
+      run: echo "${{ secrets.SERVICE_ACCOUNT }}" | jq '.' > service_account.json
+      shell: bash
 
     - name: List files to check service_account.json
       run: ls -alh
+
+    - name: Validate service_account.json
+      run: cat service_account.json
 
     - name: Validate service_account.json
       run: jq . service_account.json
