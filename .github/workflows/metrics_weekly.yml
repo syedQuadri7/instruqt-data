@@ -27,6 +27,11 @@ jobs:
     - name: Debug SERVICE_ACCOUNT secret
       run: echo "${{ secrets.SERVICE_ACCOUNT }}"
 
+    - name: Convert to JSON
+      run: |
+        echo '${{ toJson(secrets.YOUR_JSON_SECRET) }}'
+
+
       # Step 3: Create service_account.json from the secret
     - name: Create service_account.json
       run: echo "${{ secrets.SERVICE_ACCOUNT }}" | jq '.' > service_account.json
