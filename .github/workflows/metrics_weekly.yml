@@ -39,7 +39,7 @@ jobs:
       run: |
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    # Step 6: Run the Python script with credentials from a secret
+    # Step 6: Run the Python script with credentials from a secret - Will take about 20-30 min
     - name: Run Python script
       run: python main.py
       env:

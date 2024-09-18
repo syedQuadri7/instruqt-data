@@ -88,12 +88,13 @@ def write_to_sheets(path, sheet):
         except WorksheetNotFound:
             # If the sheet doesn't exist, create a new one
             worksheet = spreadsheet.add_worksheet(title=sheet, rows=300, cols=100)
+
         # Read the CSV file
         with open(f'{path}', newline='') as csvfile:
             reader = list(csv.reader(csvfile))
 
-        # Resize the worksheet to fit the CSV data
-        worksheet.resize(rows=len(reader), cols=len(reader[0]))
+        # # Resize the worksheet to fit the CSV data
+        # worksheet.resize(rows=len(reader), cols=len(reader[0]))
 
         # Update the worksheet with the CSV data
         worksheet.update('A1', reader)
