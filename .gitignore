@@ -3,4 +3,3 @@ outputs/*
 .idea/
 __pycache__/
 hvd_tracks.txt
-creds.json

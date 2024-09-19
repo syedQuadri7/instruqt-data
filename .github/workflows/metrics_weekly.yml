@@ -6,7 +6,6 @@ on:
 
   # Scheduled run every Monday at 12:00 AM CST (06:00 UTC)
   schedule:
-    # Runs at 06:00 UTC every Monday (12:00 AM CST)
     - cron: '0 6 * * 1'
 
 jobs:
