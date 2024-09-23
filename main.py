@@ -13,21 +13,22 @@ def main():
     # tagged_vault = func.get_slugs_with_tag("vault")
     # tagged_terraform = func.get_slugs_with_tag("terraform")
     # tagged_nomad = func.get_slugs_with_tag("nomad")
-    # tagged_consul = func.get_slugs_with_tag("consul")
-    # tagged_hvd = func.get_slugs_with_tag("hvd")
-    # tracks_all = func.get_track_slugs()
+    tagged_consul = func.get_slugs_with_tag("consul")
+    tagged_hvd = func.get_slugs_with_tag("hvd")
+    tracks_all = func.get_track_slugs()
 
-    test = ['database-secrets-engine']
-    func.get_track_plays_by_month(test, "test")
-
+    test = ['consul-basics']
+    # func.get_track_plays_by_month(tagged_consul,'test')
+    # func.get_tracks_review_score_by_month(tagged_consul, 'test1')
+    # func.get_tracks_completion_by_month(tagged_consul, 'test2')
     # func.get_invite_stats()
     #
     # func.get_track_plays_by_month(tracks_all, "All Track plays by Month - FY25")
-    # func.get_track_plays_by_month(tagged_hvd, "HVD Track plays by Month - FY25")
-    #
-    # func.get_tracks_review_score_by_month(tracks_all, "All Track Completion Rate by Month - FY25")
-    # func.get_tracks_review_score_by_month(tagged_hvd, "HVD Track Completion Rate by Month - FY25")
-    #
+    func.get_track_plays_by_month(tagged_hvd, "HVD Track plays by Month - FY25")
+
+    # func.get_tracks_completion_by_month(tracks_all, "All Track Completion Rate by Month - FY25")
+    # func.get_tracks_completion_by_month(tagged_hvd, "HVD Track Completion Rate by Month - FY25")
+
     # func.get_tracks_review_score_by_month(tracks_all, "All Tracks Average Happiness Score by Month - FY25")
     # func.get_tracks_review_score_by_month(tagged_hvd, "HVD Tracks Average Happiness Score by Month - FY25")
 

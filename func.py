@@ -60,12 +60,15 @@ def get_track_plays_by_month(track_slugs, sheet):
             track = get_request(query)
 
             # Extract the track title and the number of started_total plays from the response
-            title = track["data"]["statistics"]["track"]["title"]
-            started_total = track["data"]["statistics"]["track"]["started_total"]
-            started_total = None if started_total == 0 else int(started_total)
+            track_data = track["data"]["statistics"]["track"]
+            title = track_data.get("title")
+            started_total = track_data.get("started_total", 0)  # Default to 0 if not provided
+
+            # Ensure started_total is an integer
+            started_total = int(started_total)
 
             # If the track title is not already in the row, append it (to avoid duplication)
-            if title not in row:
+            if not row:
                 row.append(title)
 
             # Append the started_total plays for the current month to the row
@@ -80,7 +83,6 @@ def get_track_plays_by_month(track_slugs, sheet):
 
 def write_to_sheets(path, sheet):
     if sheet is not None:
-        # gc = gspread.service_account(filename='service_account.json')
         gc = gspread.service_account()
 
         spreadsheet = gc.open('Instruqt Metrics')
@@ -89,8 +91,7 @@ def write_to_sheets(path, sheet):
         try:
             worksheet = spreadsheet.worksheet(sheet)
         except WorksheetNotFound:
-            # If the sheet doesn't exist, create a new one
-            worksheet = spreadsheet.add_worksheet(title=sheet, rows=100, cols=50)
+            worksheet = spreadsheet.add_worksheet(title=sheet, rows=500, cols=50)
 
         # Read the CSV file
         with open(f'{path}', newline='') as csvfile:
@@ -109,25 +110,6 @@ def write_to_sheets(path, sheet):
 
         # Delete the CSV file after writing to the sheet
         os.remove(path)
-
-
-def get_track_slugs():
-    # Build the GraphQL query to retrieve the slugs of all tracks for the specified organization
-    query = f"""query {{
-           tracks(organizationSlug: "{config.ORG_SLUG}") {{
-             slug
-             title
-           }}
-       }}"""
-
-    # Send the query to the API and store the response
-    output = get_request(query)
-
-    # Extract the 'slug' field from each track in the response
-    slugs = [track['slug'] for track in output['data']['tracks']]
-
-    # Return the list of slugs
-    return slugs
 
 
 def create_table(data, sheet):
@@ -155,6 +137,9 @@ def create_table(data, sheet):
     # Create a pandas DataFrame with the values, using headers as the column labels
     df = pd.DataFrame(combined_data, columns=headers)
 
+    # Replace all 0s with empty strings after the integer conversion
+    df.replace(0, '', inplace=True)
+
     # Define the file path where the CSV file will be saved
     file_path = 'outputs/data.csv'
 
@@ -162,6 +147,7 @@ def create_table(data, sheet):
     df.to_csv(file_path, index=False)  # Use index=False to avoid adding an extra index column
 
     return write_to_sheets(file_path, sheet)
+
 
 
 def get_tracks_completion_by_month(track_slugs, sheet):
@@ -254,14 +240,14 @@ def get_tracks_review_score_by_month(track_slugs, sheet):
             title = track_data.get("title")
             average_review_score = track_data.get("average_review_score")
 
-            # Convert the review score to a percentage out of 100 (multiply by 20)
-            average_review_score_str = f"{round(average_review_score * 20, 2)}%" if average_review_score is not None else None
+            # Format the review score as a value out of 5, for example "4.5/5"
+            average_review_score_str = f"{round(average_review_score, 2)}" if average_review_score is not None else None
 
             # Initialize the row with the title on the first iteration
             if row is None:
                 row = [title]
 
-            # Append the review score (converted to a percentage) to the row
+            # Append the formatted review score to the row
             row.append(average_review_score_str)
 
         # If row has been initialized, append it to the slug_data list
@@ -270,6 +256,25 @@ def get_tracks_review_score_by_month(track_slugs, sheet):
 
     # Create and return a table (or similar structure) using the collected slug_data
     return create_table(slug_data, sheet)
+
+
+def get_track_slugs():
+    # Build the GraphQL query to retrieve the slugs of all tracks for the specified organization
+    query = f"""query {{
+           tracks(organizationSlug: "{config.ORG_SLUG}") {{
+             slug
+             title
+           }}
+       }}"""
+
+    # Send the query to the API and store the response
+    output = get_request(query)
+
+    # Extract the 'slug' field from each track in the response
+    slugs = [track['slug'] for track in output['data']['tracks']]
+
+    # Return the list of slugs
+    return slugs
 
 
 def get_slugs_with_tag(tag_val):
@@ -491,7 +496,7 @@ def get_invite_stats():
 
     # Update the column headers, adding the current EST time to "Invite Title"
     column_headers = [
-        f"Invite Title (run {current_time_est})", 'Claim Count', 'Plays', 'Total Challenges', 'Completed Challenges',
+        f"Invite Title (run {current_time_est} EST)", 'Claim Count', 'Plays', 'Total Challenges', 'Completed Challenges',
         'Completion Percent', 'Tracks in Invite', 'Users who Claimed', 'Invite Creation Date (EST)', 'Invite Author',
     ]
 
